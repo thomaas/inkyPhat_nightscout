@@ -1,0 +1,15 @@
+# An url to your nightscout site
+nigthscoutURL = 'http://your.server:8181/'
+# How many datapoints do you want to display
+nightscoutDataPoints = 25
+# A short check will be performed before the display is flashed
+checkDataBeforeRefresh = False
+# A path and filename where a simple file can be stored
+checkFile = "path and filename"
+# A path and filename where the generated plot can be stored
+matplotImagePath = 'path and filename'
+saveLastImageShown = True
+# If activated, the last image shown on inkyPhat will be stored here
+inkyPhatLastImageShown = 'a path and filename'
+# Choose the color of your inkyPhat
+inkyPhatColour = "red"
