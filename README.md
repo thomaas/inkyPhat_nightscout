@@ -1,5 +1,5 @@
 # inkyPhat_nightscout
-A python script pulling data from nightscout and displaying a graph with your latest glucose on a inkyPhat mounted on a raspberry pi.
+A python script pulling data from nightscout and displaying a graph with your latest glucose on a [inkyPhat](https://shop.pimoroni.com/products/inky-phat) mounted on a raspberry pi.
 
 On the inkyPhat it may look like this:
 ![InkyPhat generated graph](https://github.com/thomaas/inkyPhat_nightscout/blob/main/inkyPhatShown.png "InkyPhat generated graph") 
