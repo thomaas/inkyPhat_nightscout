@@ -1,4 +1,4 @@
-import nightscoutCalls
+import dexcomCalls
 import matplotLibActions
 
 from PIL import Image, ImageFont, ImageDraw
@@ -25,7 +25,7 @@ def displayText(text, position, size, offsetx, offsety):
     return w, h
 
 
-sgvs, dates, delta = nightscoutCalls.getDataFromNightscout()
+sgvs, dates, delta = dexcomCalls.getDataFromNightscout()
 
 matplotLibActions.createSGVPlot(sgvs, dates)
 

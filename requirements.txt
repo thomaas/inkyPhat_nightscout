@@ -1,0 +1,7 @@
+PIL
+font_intuitive
+inky
+matplotlib.pyplot
+numpy
+pickle
+pydexcom
