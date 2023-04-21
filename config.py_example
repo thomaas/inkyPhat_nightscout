@@ -1,5 +1,5 @@
-# An url to your nightscout site
-nigthscoutURL = 'http://your.server:8181/'
+dexcom_username = "your UserName"
+dexcom_password = "Your Dexcom Password"
 # How many datapoints do you want to display
 nightscoutDataPoints = 25
 # A short check will be performed before the display is flashed
