@@ -27,7 +27,7 @@ def getDataFromNightscout():
 
     for entry in entries[::-1]:
         sgvs.append(entry.value)
-        dates.append((entry.time + datetime.timedelta(hours=1)).strftime("%H:%M"))
+        dates.append((entry.datetime + datetime.timedelta(hours=1)).strftime("%H:%M"))
 
     delta = 0
     if(len(entries) > 1):

@@ -20,12 +20,14 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
    sudo raspi-config nonint do_spi 0
    ```
 
-2. **Install system packages** needed by Inky and Pillow:
+2. **Install system packages** needed by Inky, Pillow, and numpy:
 
    ```bash
    sudo apt update
-   sudo apt install -y git python3-venv python3-dev libopenjp2-7
+   sudo apt install -y git python3-venv python3-dev libopenjp2-7 libopenblas0
    ```
+
+   `libopenblas0` is required by the numpy wheel — without it you'll see `ImportError: libopenblas.so.0: cannot open shared object file` when running the script.
 
 3. **Clone the repo and create a virtualenv:**
 
