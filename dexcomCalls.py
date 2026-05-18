@@ -1,8 +1,8 @@
 import datetime
 import os
 import pickle
-from pydexcom import Dexcom
-from config import dexcom_username, dexcom_password, checkDataBeforeRefresh, nightscoutDataPoints, checkFile
+from pydexcom import Dexcom, Region
+from config import dexcom_username, dexcom_password, checkDataBeforeRefresh, nightscoutDataPoints, checkFile, dexcom_region
 
 def checkIfNeedsToRun(lastEntry):
     myTime = datetime.datetime.now()
@@ -16,7 +16,7 @@ def checkIfNeedsToRun(lastEntry):
         pickle.dump(lastEntry, open(checkFile, "wb"))
 
 def getDataFromNightscout():
-    dexcom = Dexcom(dexcom_username, dexcom_password, ous=True)
+    dexcom = Dexcom(username=dexcom_username, password=dexcom_password, region=Region(dexcom_region))
    
     if checkDataBeforeRefresh: 
         checkIfNeedsToRun(dexcom.get_glucose_readings(max_count=1)[0].time)

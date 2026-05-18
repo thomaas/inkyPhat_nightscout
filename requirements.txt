@@ -1,7 +1,6 @@
-PIL
-font_intuitive
-inky
-matplotlib.pyplot
+Pillow
+font-intuitive
+matplotlib
 numpy
-pickle
 pydexcom
+# inky  # only on Raspberry Pi (GPIO/SPI required) — install separately there
