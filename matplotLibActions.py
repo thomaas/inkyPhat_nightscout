@@ -99,6 +99,96 @@ def _render_plot(history, target_low, target_high, width, height):
     return img
 
 
+def render_suspend(history, stats, target_low, target_high):
+    canvas = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
+    plot_h = 80
+    plot_img = _render_day_plot(history, target_low, target_high, WIDTH, plot_h)
+    canvas.paste(plot_img, (0, 0))
+
+    draw = ImageDraw.Draw(canvas)
+    font = _font(11)
+
+    if not stats:
+        bbox = draw.textbbox((0, 0), "No data today", font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        draw.text(((WIDTH - tw) // 2,
+                   plot_h + (HEIGHT - plot_h - th) // 2),
+                  "No data today", fill=BLACK, font=font)
+        return canvas
+
+    stars = _stars_for_tir(stats["tir_pct"])
+    body = f"TIR {stats['tir_pct']}%   ø {stats['avg']}   ↓ {stats['low_pct']}%   ↑ {stats['high_pct']}%"
+
+    body_bbox = draw.textbbox((0, 0), body, font=font)
+    body_w = body_bbox[2] - body_bbox[0]
+    body_h = body_bbox[3] - body_bbox[1]
+
+    if stars:
+        prefix = f"{stars} "
+        prefix_bbox = draw.textbbox((0, 0), prefix, font=font)
+        prefix_w = prefix_bbox[2] - prefix_bbox[0]
+        total_w = prefix_w + body_w
+        x = (WIDTH - total_w) // 2
+        y = plot_h + (HEIGHT - plot_h - body_h) // 2
+        draw.text((x, y), prefix, fill=RED, font=font)
+        draw.text((x + prefix_w, y), body, fill=BLACK, font=font)
+    else:
+        x = (WIDTH - body_w) // 2
+        y = plot_h + (HEIGHT - plot_h - body_h) // 2
+        draw.text((x, y), body, fill=BLACK, font=font)
+
+    return canvas
+
+
+def _stars_for_tir(tir_pct):
+    if tir_pct >= 90:
+        return "★★★"
+    if tir_pct >= 80:
+        return "★★"
+    if tir_pct >= 70:
+        return "★"
+    return ""
+
+
+def _render_day_plot(history, target_low, target_high, width, height):
+    dpi = 100
+    fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    ax = fig.add_axes([0.08, 0.13, 0.90, 0.85])
+
+    timestamps = [e["timestamp"] for e in history]
+    values = [e["value"] for e in history]
+
+    ax.set_ylim(40, 280)
+    ax.set_yticks([target_low, target_high])
+    ax.tick_params(axis="y", labelsize=5, length=0, pad=1)
+    ax.tick_params(axis="x", labelsize=5, length=0, pad=1)
+
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=2))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H"))
+
+    ax.axhspan(target_low, target_high, facecolor="#DDDDDD", zorder=0)
+    ax.axhline(target_low, color="red", linestyle="--", linewidth=0.6, zorder=1)
+    ax.axhline(target_high, color="red", linestyle="--", linewidth=0.6, zorder=1)
+
+    ax.plot(timestamps, values, color="black", linewidth=1.0, zorder=2)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#888888")
+    ax.spines["bottom"].set_color("#888888")
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_color("#333333")
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi, facecolor="white")
+    plt.close(fig)
+    buf.seek(0)
+    img = Image.open(buf).convert("RGB")
+    if img.size != (width, height):
+        img = img.resize((width, height))
+    return img
+
+
 def _draw_pump_panel(canvas, pump, x, y, w, h):
     draw = ImageDraw.Draw(canvas)
     font = _font(9)
