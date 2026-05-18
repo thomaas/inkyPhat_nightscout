@@ -14,22 +14,16 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
 
 ## Setup on the Raspberry Pi
 
-1. **Enable SPI** so the Pi can talk to the InkyPHAT:
+1. **Install InkyPHAT from Pimoroni:
 
    ```bash
-   sudo raspi-config nonint do_spi 0
+   git clone https://github.com/pimoroni/inky
+   cd inky
+   ./install.sh
+   sudo reboot
    ```
 
-2. **Install system packages** needed by Inky, Pillow, and numpy:
-
-   ```bash
-   sudo apt update
-   sudo apt install -y git python3-venv python3-dev libopenjp2-7 libopenblas0
-   ```
-
-   `libopenblas0` is required by the numpy wheel — without it you'll see `ImportError: libopenblas.so.0: cannot open shared object file` when running the script.
-
-3. **Clone the repo and create a virtualenv:**
+2. **Clone the repo and create a virtualenv:**
 
    ```bash
    git clone https://github.com/thomaas/inkyPhat_nightscout.git
@@ -42,7 +36,7 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
 
    `inky` is the Pimoroni driver for the e-paper display. It's intentionally not in `requirements.txt` so the project can also be developed on a Mac.
 
-4. **Create your config:**
+3. **Create your config:**
 
    ```bash
    cp config.py_example config.py
@@ -53,7 +47,7 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
    - `dexcom_region` — `"us"` for the US, `"ous"` for the rest of the world, `"jp"` for Japan
    - `inkyPhatColour` — `"red"`, `"yellow"`, or `"black"`, matching your InkyPHAT model
 
-5. **Run it:**
+4. **Run it:**
 
    ```bash
    python main.py
