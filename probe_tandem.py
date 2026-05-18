@@ -106,18 +106,12 @@ def _probe(label, func):
         return None
 
 
-def _extract_device_id(pumper_info):
-    if not isinstance(pumper_info, dict):
-        return None
-    for key in ("tconnectDeviceId", "tconnect_device_id", "deviceId", "device_id"):
-        if pumper_info.get(key):
-            return pumper_info[key]
-    for container_key in ("devices", "pumpDevices", "pumps"):
-        items = pumper_info.get(container_key)
-        if isinstance(items, list) and items and isinstance(items[0], dict):
-            for key in ("tconnectDeviceId", "deviceId", "id"):
-                if items[0].get(key):
-                    return items[0][key]
+def _extract_device_id(pump_event_metadata):
+    """pump_event_metadata is a list of {tconnectDeviceId, serialNumber, ...}."""
+    if isinstance(pump_event_metadata, list) and pump_event_metadata:
+        first = pump_event_metadata[0]
+        if isinstance(first, dict) and first.get("tconnectDeviceId"):
+            return first["tconnectDeviceId"]
     return None
 
 
@@ -174,25 +168,22 @@ def main():
     end = today.isoformat()
     print(f"Date range: {start} → {end}")
 
-    pumper_info = _probe(
-        "tandemsource_pumper_info", lambda: ts.pumper_info()
-    )
-    _probe(
+    _probe("tandemsource_pumper_info", lambda: ts.pumper_info())
+    metadata = _probe(
         "tandemsource_pump_event_metadata", lambda: ts.pump_event_metadata()
     )
 
-    device_id = _extract_device_id(pumper_info)
+    device_id = _extract_device_id(metadata)
     if device_id:
-        print(f"\nExtracted device_id from pumper_info: {device_id}")
+        print(f"\nExtracted tconnectDeviceId from metadata: {device_id}")
         _probe(
             "tandemsource_pump_events",
             lambda: _serialize_events(ts.pump_events(device_id, start, end)),
         )
     else:
-        print("\nCould not auto-extract a device ID from pumper_info.")
-        print("Look at tandem_probe_output/tandemsource_pumper_info.json,")
-        print("identify the field that holds the device ID, and share it")
-        print("back. I'll update the probe to use the right field.")
+        print("\nCould not extract tconnectDeviceId from pump_event_metadata.")
+        print("Inspect tandem_probe_output/tandemsource_pump_event_metadata.json")
+        print("and share it back.")
 
     print(f"\nDone. Files in: {OUTPUT_DIR}")
     print("Review each file, redact sensitive bits (userGuid, email, etc.)")
