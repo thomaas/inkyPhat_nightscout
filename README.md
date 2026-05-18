@@ -20,8 +20,11 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
    git clone https://github.com/pimoroni/inky
    cd inky
    ./install.sh
+   sudo apt install -y git python3-venv python3-dev libopenjp2-7 libopenblas0
    sudo reboot
    ```
+   
+   libopenblas0 is required by the numpy wheel — without it you'll see ImportError: libopenblas.so.0: cannot open shared object file when running the script.
 
 2. **Clone the repo and create a virtualenv:**
 
