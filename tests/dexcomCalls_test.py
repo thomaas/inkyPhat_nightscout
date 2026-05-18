@@ -1,35 +1,35 @@
 import unittest
 import dexcomCalls as sut
 
+
 class MyTestCase(unittest.TestCase):
-        
-    def test_getDataFromNS(self):
+
+    def test_getDataFromDexcom(self):
         sut.checkDataBeforeRefresh = False
         sut.nightscoutDataPoints = 1
 
-        sgvs, dates, delta = sut.getDataFromNightscout()
-        self.assertEqual(len(sgvs), 1)
-        self.assertEqual(len(dates), 1)
-        self.assertIsNotNone(delta)
-    
-    def test_getDataFromNSMultiple(self):
+        data = sut.getDataFromNightscout()
+        self.assertIn("current_glucose", data)
+        self.assertIn("glucose_history", data)
+        self.assertEqual(len(data["glucose_history"]), 1)
+        self.assertIsNotNone(data["current_glucose"]["value"])
+        self.assertIsNotNone(data["current_glucose"]["trend"])
+
+    def test_getDataFromDexcomMultiple(self):
         sut.checkDataBeforeRefresh = False
         sut.nightscoutDataPoints = 10
 
-        sgvs, dates, delta = sut.getDataFromNightscout()
-        self.assertEqual(len(sgvs), 10)
-        self.assertEqual(len(dates), 10)
-        self.assertIsNotNone(delta)
+        data = sut.getDataFromNightscout()
+        self.assertEqual(len(data["glucose_history"]), 10)
+        self.assertIsNotNone(data["current_glucose"]["delta"])
 
-    def test_getDataFromNSNothingNew(self):
+    def test_getDataFromDexcomNothingNew(self):
         sut.checkDataBeforeRefresh = True
         sut.nightscoutDataPoints = 1
         sut.checkFile = "lastRun"
 
-        sgvs, dates, delta = sut.getDataFromNightscout()
-        self.assertEqual(len(sgvs), 1)
-        self.assertEqual(len(dates), 1)
-        self.assertIsNotNone(delta)
+        data = sut.getDataFromNightscout()
+        self.assertEqual(len(data["glucose_history"]), 1)
 
-        with self.assertRaises(SystemExit): 
+        with self.assertRaises(SystemExit):
             sut.getDataFromNightscout()

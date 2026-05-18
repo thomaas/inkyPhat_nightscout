@@ -3,4 +3,7 @@ font-intuitive
 matplotlib
 numpy
 pydexcom
+tconnectsync>=2.0
+python-dotenv
+setuptools<81
 # inky  # only on Raspberry Pi (GPIO/SPI required) — install separately there

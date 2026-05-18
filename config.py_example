@@ -1,15 +1,38 @@
+# --- Dexcom credentials ---------------------------------------------------
 dexcom_username = "your UserName"
 dexcom_password = "Your Dexcom Password"
-# Dexcom server region: "us" (US), "ous" (rest of world), or "jp" (Japan)
+# Server region: "us" (US), "ous" (rest of world), or "jp" (Japan).
 dexcom_region = "ous"
-# How many datapoints do you want to display
-nightscoutDataPoints = 25
-# A short check will be performed before the display is flashed
+# Hours to add to Dexcom timestamps for local-time display (CET = 1).
+dexcom_timezone_offset_hours = 1
+
+# --- Glucose target range -------------------------------------------------
+# Values outside this range are rendered in red on the display.
+target_low = 70
+target_high = 180
+
+# --- Data window ----------------------------------------------------------
+# 3 hours of history at 5-minute intervals = 36 points.
+nightscoutDataPoints = 36
+
+# --- Behaviour ------------------------------------------------------------
+# Skip the refresh if the latest reading hasn't changed since last run.
 checkDataBeforeRefresh = False
-# A path and filename where a simple file can be stored (only used when checkDataBeforeRefresh is True)
+
+# --- Tandem pump (optional) -----------------------------------------------
+# Set show_pump_data = True once tandemCalls.py is wired up to your account.
+show_pump_data = False
+tconnect_email = ""
+tconnect_password = ""
+tconnect_region = "EU"            # "US" or "EU"
+tconnect_timezone_name = "Europe/Berlin"
+
+# --- File paths -----------------------------------------------------------
+# Only used when checkDataBeforeRefresh is True.
 checkFile = "path and filename"
-# Save the final image to disk as a PNG (useful for debugging or previewing without InkyPHAT)
+# Save the final image to disk as a PNG (useful for previewing without an InkyPHAT).
 saveLastImageShown = False
-inkyPhatLastImageShown = 'a path and filename'
-# Choose the color of your inkyPhat
+inkyPhatLastImageShown = "a path and filename"
+
+# --- InkyPHAT (only used on Raspberry Pi) ---------------------------------
 inkyPhatColour = "red"

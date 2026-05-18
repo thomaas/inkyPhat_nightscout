@@ -1,27 +1,27 @@
 import dexcomCalls
 import matplotLibActions
-
-from PIL import ImageDraw
-
 from inkyHelper import InkyDisplay
+from config import show_pump_data, target_high, target_low
+
+
+def _get_pump_data():
+    if not show_pump_data:
+        return None
+    try:
+        import tandemCalls
+        return tandemCalls.get_pump_data()
+    except Exception as exc:
+        print(f"Tandem API not available: {exc}")
+        return None
 
 
 def main():
-    sgvs, dates, delta = dexcomCalls.getDataFromNightscout()
-    plotBuffer = matplotLibActions.createSGVPlot(sgvs, dates)
+    glucose = dexcomCalls.getDataFromNightscout()
+    pump_data = _get_pump_data()
 
-    display = InkyDisplay()
-    img = display.prepareImage(plotBuffer)
-    draw = ImageDraw.Draw(img)
+    img = matplotLibActions.render(glucose, pump_data, target_low, target_high)
 
-    deltaStr = f"+{delta}" if delta > 0 else str(delta)
-
-    _, hDelta = display.drawText(draw, deltaStr, 20, 0, 0)
-    wMg, hMg = display.drawText(draw, "mg/dl", 10, 0, hDelta)
-    display.drawText(draw, str(sgvs[-1]), 32, wMg + 2, 0)
-    display.drawText(draw, dates[-1], 12, 0, hDelta + hMg)
-
-    display.show(img)
+    InkyDisplay().show(img)
 
 
 if __name__ == "__main__":
