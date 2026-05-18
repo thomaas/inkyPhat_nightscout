@@ -46,6 +46,9 @@ class InkyDisplay:
         if saveLastImageShown:
             img.save(inkyPhatLastImageShown, "PNG")
         if self.hasHardware:
+            # Inky's set_image quantizes via palette and refuses mode '1' images.
+            if img.mode == "1":
+                img = img.convert("RGB")
             self._display.set_image(img)
             self._display.show()
         elif saveLastImageShown:
