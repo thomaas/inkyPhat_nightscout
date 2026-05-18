@@ -14,7 +14,7 @@ A Python script that pulls glucose data from Dexcom (via [pydexcom](https://gith
 
 ## Setup on the Raspberry Pi
 
-1. **Install InkyPHAT from Pimoroni:
+1. **Install InkyPHAT from Pimoroni:**
 
    ```bash
    git clone https://github.com/pimoroni/inky
