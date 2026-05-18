@@ -24,8 +24,8 @@ class InkyDisplay:
             self.black = self.FALLBACK_BLACK
             self.hasHardware = False
 
-    def prepareImage(self, sourcePath):
-        img = Image.open(sourcePath).convert('L')
+    def prepareImage(self, source):
+        img = Image.open(source).convert('L')
         img = img.point(lambda x: 255 if x < 240 else 0, '1')
         return img.resize((self.width, self.height))
 
@@ -48,5 +48,7 @@ class InkyDisplay:
         if self.hasHardware:
             self._display.set_image(img)
             self._display.show()
-        else:
+        elif saveLastImageShown:
             print(f"No Inky hardware detected — preview saved to {inkyPhatLastImageShown}")
+        else:
+            print("No Inky hardware detected and saveLastImageShown is off — nothing to show.")

@@ -4,15 +4,14 @@ import matplotLibActions
 from PIL import ImageDraw
 
 from inkyHelper import InkyDisplay
-from config import matplotImagePath
 
 
 def main():
     sgvs, dates, delta = dexcomCalls.getDataFromNightscout()
-    matplotLibActions.createSGVPlot(sgvs, dates)
+    plotBuffer = matplotLibActions.createSGVPlot(sgvs, dates)
 
     display = InkyDisplay()
-    img = display.prepareImage(matplotImagePath)
+    img = display.prepareImage(plotBuffer)
     draw = ImageDraw.Draw(img)
 
     deltaStr = f"+{delta}" if delta > 0 else str(delta)
