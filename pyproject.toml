@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that hit the live Dexcom or Tandem APIs (require real credentials in config.py)",
+]
