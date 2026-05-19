@@ -31,7 +31,7 @@ def _font(size):
         return ImageFont.load_default()
 
 
-def render(glucose, pump_data, target_low, target_high):
+def render(glucose, pump_data, target_low, target_high, sensor_warning_days=3):
     plot_w = PLOT_WIDTH_WITH_PUMP if pump_data else PLOT_WIDTH_WITHOUT_PUMP
 
     canvas = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
@@ -39,6 +39,9 @@ def render(glucose, pump_data, target_low, target_high):
         glucose["glucose_history"], target_low, target_high, plot_w, HEIGHT
     )
     canvas.paste(plot_img, (0, 0))
+
+    if pump_data:
+        _draw_sensor_badge(canvas, pump_data.get("sensor"), plot_w, sensor_warning_days)
 
     panel_x = plot_w
     panel_w = WIDTH - plot_w
@@ -57,6 +60,32 @@ def render(glucose, pump_data, target_low, target_high):
         )
 
     return canvas
+
+
+def _draw_sensor_badge(canvas, sensor, plot_w, threshold_days):
+    if not sensor:
+        return
+    hours = sensor.get("remaining_hours")
+    if hours is None or hours / 24 > threshold_days:
+        return
+
+    if hours >= 24:
+        text = f"S {int(hours / 24)}d"
+    else:
+        text = f"S {int(hours)}h"
+
+    draw = ImageDraw.Draw(canvas)
+    font = _font(9)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    pad_x, pad_y = 2, 1
+    box_x = plot_w - tw - 2 * pad_x - 2
+    box_y = 2
+    draw.rectangle(
+        (box_x, box_y, box_x + tw + 2 * pad_x, box_y + th + 2 * pad_y),
+        fill=RED,
+    )
+    draw.text((box_x + pad_x, box_y + pad_y - 1), text, fill=WHITE, font=font)
 
 
 def _render_plot(history, target_low, target_high, width, height):

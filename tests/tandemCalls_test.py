@@ -54,6 +54,21 @@ class TestFindInsulinDuration:
         assert tandemCalls._find_insulin_duration_minutes([]) == 180
 
 
+class TestSensorTypeFor:
+    @pytest.mark.parametrize("cls_name, expected", [
+        ("LidCgmJoinSessionG7", "G7"),
+        ("LidCgmStartSessionG7", "G7"),
+        ("LidCgmStartSessionGx", "Gx"),
+        ("LidCgmJoinSessionGx", "Gx"),
+        ("LidCgmStartSessionFsl2", "Fsl2"),
+        ("LidCgmJoinSessionFsl2", "Fsl2"),
+        ("LidBolusCompleted", None),
+        ("LidCgmStopSessionG7", "G7"),  # name still contains "G7"
+    ])
+    def test_classification(self, cls_name, expected):
+        assert tandemCalls._sensor_type_for(cls_name) == expected
+
+
 class TestDecayIob:
     def test_no_time_elapsed_returns_full_iob(self):
         now = datetime.datetime(2026, 5, 18, 12, 0, tzinfo=datetime.timezone.utc)

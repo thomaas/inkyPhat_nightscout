@@ -11,6 +11,12 @@ dexcom_timezone_offset_hours = 1
 target_low = 70
 target_high = 180
 
+# --- Sensor warning -------------------------------------------------------
+# When the remaining Dexcom session time drops to this many days or fewer,
+# a red "S Xd" badge is shown in the top-right of the live screen. Only
+# available when show_pump_data is True (the data source is the Tandem pump).
+sensor_warning_days = 3
+
 # --- Data window ----------------------------------------------------------
 # 3 hours of history at 5-minute intervals = 36 points.
 nightscoutDataPoints = 36

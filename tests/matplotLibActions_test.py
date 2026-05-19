@@ -71,6 +71,43 @@ class TestRenderSuspend:
         assert _count_red_pixels(top_strip) > 10, "expected fireworks bursts in top strip"
 
 
+class TestSensorBadge:
+    def _make_pump(self, remaining_hours):
+        return {
+            "iob": 1.0,
+            "last_bolus": None,
+            "current_basal": 1.0,
+            "sensor": {"type": "G7", "remaining_hours": remaining_hours},
+        }
+
+    def test_no_badge_when_no_pump_data(self, glucose_payload):
+        img = matplotLibActions.render(glucose_payload, None, 70, 180, sensor_warning_days=3)
+        top_strip = img.crop((100, 0, 212, 15))
+        # No red badge area should appear in the top-right when there's no pump data
+        assert _count_red_pixels(top_strip) < 30  # only the dashed target line crosses
+
+    def test_no_badge_when_sensor_above_threshold(self, glucose_payload):
+        pump = self._make_pump(remaining_hours=240)  # 10 days
+        img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
+        # Without a badge, the corner (top-right of plot area) is plot background only.
+        # Sample a tight rectangle that the badge would occupy.
+        corner = img.crop((100, 0, 130, 14))
+        assert _count_red_pixels(corner) == 0
+
+    def test_badge_appears_when_sensor_at_two_days(self, glucose_payload):
+        pump = self._make_pump(remaining_hours=48)
+        img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
+        corner = img.crop((100, 0, 130, 14))
+        # The badge is a small red rectangle — should produce a substantial red blob
+        assert _count_red_pixels(corner) > 30
+
+    def test_badge_uses_hours_below_one_day(self, glucose_payload):
+        pump = self._make_pump(remaining_hours=18)
+        img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
+        corner = img.crop((100, 0, 130, 14))
+        assert _count_red_pixels(corner) > 30
+
+
 class TestDrawBurst:
     def test_burst_renders_red_lines(self):
         from PIL import Image, ImageDraw

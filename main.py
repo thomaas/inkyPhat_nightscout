@@ -1,7 +1,7 @@
 import dexcomCalls
 import matplotLibActions
 from inkyHelper import InkyDisplay
-from config import show_pump_data, target_high, target_low
+from config import sensor_warning_days, show_pump_data, target_high, target_low
 
 
 def _get_pump_data():
@@ -19,7 +19,10 @@ def main():
     glucose = dexcomCalls.getDataFromNightscout()
     pump_data = _get_pump_data()
 
-    img = matplotLibActions.render(glucose, pump_data, target_low, target_high)
+    img = matplotLibActions.render(
+        glucose, pump_data, target_low, target_high,
+        sensor_warning_days=sensor_warning_days,
+    )
 
     InkyDisplay().show(img)
 
