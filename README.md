@@ -11,6 +11,7 @@ The live display shows the current reading + trend + 3h graph; whenever Tandem S
 
 ![InkyPhat generated graph](inkyPhatShown.png)
 ![InkyPhat mounted on a Raspberry Pi](inkyPhatShown2.JPG)
+![InkyPhat mounted on a Raspberry Pi - Suspend Display with TIR](IMG_5623.jpeg)
 
 ## What you need
 
