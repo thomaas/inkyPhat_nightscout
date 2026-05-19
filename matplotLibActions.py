@@ -106,36 +106,44 @@ def render_suspend(history, stats, target_low, target_high):
     canvas.paste(plot_img, (0, 0))
 
     draw = ImageDraw.Draw(canvas)
-    font = _font(11)
+    body_font = _font(10)
 
     if not stats:
-        bbox = draw.textbbox((0, 0), "No data today", font=font)
+        bbox = draw.textbbox((0, 0), "No data today", font=body_font)
         tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
         draw.text(((WIDTH - tw) // 2,
                    plot_h + (HEIGHT - plot_h - th) // 2),
-                  "No data today", fill=BLACK, font=font)
+                  "No data today", fill=BLACK, font=body_font)
         return canvas
 
-    stars = _stars_for_tir(stats["tir_pct"])
-    body = f"TIR {stats['tir_pct']}%   ø {stats['avg']}   ↓ {stats['low_pct']}%   ↑ {stats['high_pct']}%"
+    _draw_fireworks(draw, stats["tir_pct"])
 
-    body_bbox = draw.textbbox((0, 0), body, font=font)
+    stars = _stars_for_tir(stats["tir_pct"])
+    body = f"TIR {stats['tir_pct']}%  ø {stats['avg']}  ↓ {stats['low_pct']}%  ↑ {stats['high_pct']}%"
+
+    body_bbox = draw.textbbox((0, 0), body, font=body_font)
     body_w = body_bbox[2] - body_bbox[0]
     body_h = body_bbox[3] - body_bbox[1]
 
     if stars:
+        star_font = _font(14)
         prefix = f"{stars} "
-        prefix_bbox = draw.textbbox((0, 0), prefix, font=font)
-        prefix_w = prefix_bbox[2] - prefix_bbox[0]
+        sbbox = draw.textbbox((0, 0), prefix, font=star_font)
+        prefix_w = sbbox[2] - sbbox[0]
+        prefix_h = sbbox[3] - sbbox[1]
         total_w = prefix_w + body_w
         x = (WIDTH - total_w) // 2
-        y = plot_h + (HEIGHT - plot_h - body_h) // 2
-        draw.text((x, y), prefix, fill=RED, font=font)
-        draw.text((x + prefix_w, y), body, fill=BLACK, font=font)
+        # Baseline-align: heights differ, but a common baseline keeps it tidy.
+        star_ascent = star_font.getmetrics()[0]
+        body_ascent = body_font.getmetrics()[0]
+        y_stars = plot_h + (HEIGHT - plot_h - prefix_h) // 2
+        y_body = y_stars + (star_ascent - body_ascent)
+        draw.text((x, y_stars), prefix, fill=RED, font=star_font)
+        draw.text((x + prefix_w, y_body), body, fill=BLACK, font=body_font)
     else:
         x = (WIDTH - body_w) // 2
         y = plot_h + (HEIGHT - plot_h - body_h) // 2
-        draw.text((x, y), body, fill=BLACK, font=font)
+        draw.text((x, y), body, fill=BLACK, font=body_font)
 
     return canvas
 
@@ -148,6 +156,35 @@ def _stars_for_tir(tir_pct):
     if tir_pct >= 70:
         return "★"
     return ""
+
+
+def _draw_burst(draw, cx, cy, radius, color=RED):
+    r = radius
+    draw.line([(cx - r, cy), (cx + r, cy)], fill=color)
+    draw.line([(cx, cy - r), (cx, cy + r)], fill=color)
+    d = max(1, int(r * 0.65))
+    draw.line([(cx - d, cy - d), (cx + d, cy + d)], fill=color)
+    draw.line([(cx - d, cy + d), (cx + d, cy - d)], fill=color)
+
+
+def _draw_fireworks(draw, tir_pct):
+    if tir_pct >= 90:
+        bursts = [
+            (16, 7, 5), (46, 16, 3), (90, 5, 5), (130, 13, 3),
+            (175, 6, 4), (200, 17, 3), (10, 72, 3), (202, 72, 3),
+        ]
+    elif tir_pct >= 80:
+        bursts = [
+            (20, 8, 4), (90, 5, 4), (180, 8, 4), (45, 18, 3),
+        ]
+    elif tir_pct >= 70:
+        bursts = [
+            (16, 8, 3), (196, 8, 3),
+        ]
+    else:
+        return
+    for cx, cy, size in bursts:
+        _draw_burst(draw, cx, cy, size)
 
 
 def _render_day_plot(history, target_low, target_high, width, height):
