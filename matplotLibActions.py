@@ -16,7 +16,7 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
 PLOT_WIDTH_WITH_PUMP = 130
-PLOT_WIDTH_WITHOUT_PUMP = 170
+PLOT_WIDTH_WITHOUT_PUMP = 158
 
 _FONT_PATH = os.path.join(
     os.path.dirname(matplotlib.__file__),
@@ -69,8 +69,8 @@ def _render_plot(history, target_low, target_high, width, height):
 
     ax.set_ylim(40, 280)
     ax.set_yticks([target_low, target_high])
-    ax.tick_params(axis="y", labelsize=5, length=0, pad=1)
-    ax.tick_params(axis="x", labelsize=5, length=0, pad=1)
+    ax.tick_params(axis="y", labelsize=6, length=0, pad=1)
+    ax.tick_params(axis="x", labelsize=6, length=0, pad=1)
 
     ax.xaxis.set_major_locator(mdates.HourLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H"))
@@ -160,8 +160,8 @@ def _render_day_plot(history, target_low, target_high, width, height):
 
     ax.set_ylim(40, 280)
     ax.set_yticks([target_low, target_high])
-    ax.tick_params(axis="y", labelsize=5, length=0, pad=1)
-    ax.tick_params(axis="x", labelsize=5, length=0, pad=1)
+    ax.tick_params(axis="y", labelsize=6, length=0, pad=1)
+    ax.tick_params(axis="x", labelsize=6, length=0, pad=1)
 
     ax.xaxis.set_major_locator(mdates.HourLocator(interval=2))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H"))
@@ -191,7 +191,7 @@ def _render_day_plot(history, target_low, target_high, width, height):
 
 def _draw_pump_panel(canvas, pump, x, y, w, h):
     draw = ImageDraw.Draw(canvas)
-    font = _font(9)
+    font = _font(11)
     line_h = h // 3
     pad = 2
 
@@ -209,10 +209,10 @@ def _draw_pump_panel(canvas, pump, x, y, w, h):
     if bolus is not None:
         mins = bolus.get("minutes_ago", 0)
         when = f"{mins}m" if mins < 60 else f"{mins // 60}h"
-        line(1, "Bolus", f"{bolus['units']:.1f}U {when}")
+        line(1, "Bol", f"{bolus['units']:.1f}U {when}")
     else:
-        line(1, "Bolus", "—")
-    line(2, "Basal", f"{basal:.2f}" if basal is not None else "—")
+        line(1, "Bol", "—")
+    line(2, "Bas", f"{basal:.2f}" if basal is not None else "—")
 
 
 def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, compact):
@@ -221,9 +221,9 @@ def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, co
     value = current["value"]
     value_color = BLACK if target_low <= value <= target_high else RED
 
-    big = _font(18 if compact else 24)
-    medium = _font(11 if compact else 14)
-    small = _font(8)
+    big = _font(20 if compact else 28)
+    medium = _font(13 if compact else 16)
+    small = _font(10)
 
     value_str = str(value)
     arrow = current["trend"]
@@ -232,6 +232,7 @@ def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, co
     time_str = current["timestamp"].strftime("%H:%M")
 
     pad = 2
+    bottom_pad = 4
     cx = x + w // 2
 
     def textsize(text, font):
@@ -251,5 +252,5 @@ def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, co
     draw.text((start_x + aw + gap, middle_y), delta_str, fill=BLACK, font=medium)
 
     tw, th = textsize(time_str, small)
-    bottom_y = y + h - th - pad
+    bottom_y = y + h - th - bottom_pad
     draw.text((cx - tw // 2, bottom_y), time_str, fill=BLACK, font=small)
