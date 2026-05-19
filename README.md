@@ -1,15 +1,23 @@
 # inkyPhat_nightscout
 
-A Python script that pulls glucose data from Dexcom (via [pydexcom](https://github.com/gagebenne/pydexcom)) and renders the latest reading plus a trend graph onto a Pimoroni [InkyPHAT](https://shop.pimoroni.com/products/inky-phat) mounted on a Raspberry Pi.
+A Python script that combines live glucose data from Dexcom with pump data from a Tandem t:slim X2 and renders both onto a Pimoroni [InkyPHAT](https://shop.pimoroni.com/products/inky-phat) mounted on a Raspberry Pi — no Nightscout instance required.
+
+Data sources:
+
+- **CGM:** Dexcom Share API directly, via [pydexcom](https://github.com/gagebenne/pydexcom). Real-time, no lag.
+- **Pump:** Tandem Source API (the new platform replacing the legacy t:connect), via [tconnectsync](https://github.com/jwoglom/tconnectsync) used as a library. Provides current IOB, last bolus, and Control-IQ-adjusted basal rate (~5–15 min lag).
+
+The live display shows the current reading + trend + 3h graph; whenever Tandem Source is reachable, a side panel adds IOB / last bolus / current basal. Outside work hours a suspend screen takes over: full-day graph + Time-in-Range stats, with a small ★ / ★★ / ★★★ trophy when TIR is good.
 
 ![InkyPhat generated graph](inkyPhatShown.png)
-![InkyPhat mounted on a Raspberry Pi](inkyPhatShown2.jpeg)
+![InkyPhat mounted on a Raspberry Pi](inkyPhatShown2.JPG)
 
 ## What you need
 
 - A Raspberry Pi with a GPIO header (Zero W / Zero 2 W / 3 / 4 are all fine)
 - A Pimoroni InkyPHAT (red, yellow, or black/white)
 - A Dexcom Share account (username + password)
+- Optional: a Tandem Source account (`source.tandemdiabetes.com`) for pump data
 - Python 3.11 or newer
 
 ## Setup on the Raspberry Pi
