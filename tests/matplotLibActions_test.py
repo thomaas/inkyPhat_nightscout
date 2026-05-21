@@ -107,6 +107,14 @@ class TestSensorBadge:
         corner = img.crop((100, 0, 130, 14))
         assert _count_red_pixels(corner) > 30
 
+    def test_badge_shows_hours_not_floored_days(self, glucose_payload):
+        # 70h ≈ 2.92 days. Old floor logic would print "S 2d" — misleading.
+        # New logic should print "S 70h" instead.
+        pump = self._make_pump(remaining_hours=70)
+        img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
+        corner = img.crop((100, 0, 130, 14))
+        assert _count_red_pixels(corner) > 30
+
 
 class TestDrawBurst:
     def test_burst_renders_red_lines(self):

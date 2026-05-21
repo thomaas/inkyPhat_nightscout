@@ -69,10 +69,9 @@ def _draw_sensor_badge(canvas, sensor, plot_w, threshold_days):
     if hours is None or hours / 24 > threshold_days:
         return
 
-    if hours >= 24:
-        text = f"S {int(hours / 24)}d"
-    else:
-        text = f"S {int(hours)}h"
+    # Always show exact hours in the warning zone — avoids floor-rounding
+    # surprises like "S 2d" for what's actually 70 hours / nearly 3 days.
+    text = f"S {int(round(hours))}h"
 
     draw = ImageDraw.Draw(canvas)
     font = _font(9)

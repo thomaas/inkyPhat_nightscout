@@ -115,6 +115,13 @@ def _extract_device_id(pump_event_metadata):
     return None
 
 
+def _probe_session_events(ts, device_id, start_iso, end_iso, event_ids):
+    from tconnectsync.eventparser.generic import Events, decode_raw_events
+    raw = ts.pump_events_raw(device_id, start_iso, end_iso, event_ids_filter=event_ids)
+    decoded = decode_raw_events(raw)
+    return _serialize_events(list(Events(decoded)))
+
+
 def _serialize_events(events):
     out = []
     for event in events:
@@ -179,6 +186,15 @@ def main():
         _probe(
             "tandemsource_pump_events",
             lambda: _serialize_events(ts.pump_events(device_id, start, end)),
+        )
+        # Capture CGM session events specifically over a 14-day window — needed
+        # to diagnose sensor-remaining-time computation when the current sensor
+        # was started before yesterday.
+        session_start = (today - datetime.timedelta(days=14)).isoformat()
+        SESSION_EVENT_IDS = [212, 213, 214, 394, 404, 405, 406, 447]
+        _probe(
+            "tandemsource_sensor_session_events_14d",
+            lambda: _probe_session_events(ts, device_id, session_start, end, SESSION_EVENT_IDS),
         )
     else:
         print("\nCould not extract tconnectDeviceId from pump_event_metadata.")
