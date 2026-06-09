@@ -15,8 +15,9 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-PLOT_WIDTH_WITH_PUMP = 130
-PLOT_WIDTH_WITHOUT_PUMP = 158
+# Info (glucose value + pump data) lives on the left, the graph on the right.
+INFO_WIDTH = 116
+GRAPH_WIDTH = WIDTH - INFO_WIDTH
 
 _FONT_PATH = os.path.join(
     os.path.dirname(matplotlib.__file__),
@@ -32,37 +33,28 @@ def _font(size):
 
 
 def render(glucose, pump_data, target_low, target_high, sensor_warning_days=3):
-    plot_w = PLOT_WIDTH_WITH_PUMP if pump_data else PLOT_WIDTH_WITHOUT_PUMP
-
     canvas = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
+
+    graph_x = INFO_WIDTH
     plot_img = _render_plot(
-        glucose["glucose_history"], target_low, target_high, plot_w, HEIGHT
+        glucose["glucose_history"], target_low, target_high, GRAPH_WIDTH, HEIGHT
     )
-    canvas.paste(plot_img, (0, 0))
+    canvas.paste(plot_img, (graph_x, 0))
 
     if pump_data:
-        _draw_sensor_badge(canvas, pump_data.get("sensor"), plot_w, sensor_warning_days)
-
-    panel_x = plot_w
-    panel_w = WIDTH - plot_w
-
-    if pump_data:
-        half = HEIGHT // 2
-        _draw_pump_panel(canvas, pump_data, panel_x, 0, panel_w, half)
-        _draw_glucose_panel(
-            canvas, glucose, target_low, target_high,
-            panel_x, half, panel_w, HEIGHT - half, compact=True,
+        _draw_sensor_badge(
+            canvas, pump_data.get("sensor"), graph_x, GRAPH_WIDTH, sensor_warning_days
         )
-    else:
-        _draw_glucose_panel(
-            canvas, glucose, target_low, target_high,
-            panel_x, 0, panel_w, HEIGHT, compact=False,
-        )
+
+    _draw_info_panel(
+        canvas, glucose, pump_data, target_low, target_high,
+        0, 0, INFO_WIDTH, HEIGHT,
+    )
 
     return canvas
 
 
-def _draw_sensor_badge(canvas, sensor, plot_w, threshold_days):
+def _draw_sensor_badge(canvas, sensor, graph_x, graph_w, threshold_days):
     if not sensor:
         return
     hours = sensor.get("remaining_hours")
@@ -78,7 +70,7 @@ def _draw_sensor_badge(canvas, sensor, plot_w, threshold_days):
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     pad_x, pad_y = 2, 1
-    box_x = plot_w - tw - 2 * pad_x - 2
+    box_x = graph_x + graph_w - tw - 2 * pad_x - 2
     box_y = 2
     draw.rectangle(
         (box_x, box_y, box_x + tw + 2 * pad_x, box_y + th + 2 * pad_y),
@@ -254,41 +246,16 @@ def _render_day_plot(history, target_low, target_high, width, height):
     return img
 
 
-def _draw_pump_panel(canvas, pump, x, y, w, h):
-    draw = ImageDraw.Draw(canvas)
-    font = _font(11)
-    line_h = h // 3
-    pad = 2
-
-    def line(idx, label, value):
-        draw.text(
-            (x + pad, y + idx * line_h),
-            f"{label}: {value}", fill=BLACK, font=font,
-        )
-
-    iob = pump.get("iob")
-    bolus = pump.get("last_bolus")
-    basal = pump.get("current_basal")
-
-    line(0, "IOB", f"{iob:.1f}U" if iob is not None else "—")
-    if bolus is not None:
-        mins = bolus.get("minutes_ago", 0)
-        when = f"{mins}m" if mins < 60 else f"{mins // 60}h"
-        line(1, "Bol", f"{bolus['units']:.1f}U {when}")
-    else:
-        line(1, "Bol", "—")
-    line(2, "Bas", f"{basal:.2f}" if basal is not None else "—")
-
-
-def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, compact):
+def _draw_info_panel(canvas, glucose, pump, target_low, target_high, x, y, w, h):
     draw = ImageDraw.Draw(canvas)
     current = glucose["current_glucose"]
     value = current["value"]
     value_color = BLACK if target_low <= value <= target_high else RED
 
-    big = _font(20 if compact else 28)
-    medium = _font(13 if compact else 16)
-    small = _font(10)
+    big = _font(42)
+    arrow_font = _font(22)
+    medium = _font(15)
+    pump_font = _font(13)
 
     value_str = str(value)
     arrow = current["trend"]
@@ -296,26 +263,53 @@ def _draw_glucose_panel(canvas, glucose, target_low, target_high, x, y, w, h, co
     delta_str = f"+{delta}" if delta > 0 else str(delta)
     time_str = current["timestamp"].strftime("%H:%M")
 
-    pad = 2
-    bottom_pad = 4
-    cx = x + w // 2
+    pad = 3
 
     def textsize(text, font):
         bbox = draw.textbbox((0, 0), text, font=font)
         return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
+    # Big glucose value, top-left.
     vw, vh = textsize(value_str, big)
-    draw.text((cx - vw // 2, y + pad), value_str, fill=value_color, font=big)
+    vy = y + pad
+    draw.text((x + pad, vy), value_str, fill=value_color, font=big)
 
-    middle_y = y + pad + vh + 1
-    aw, ah = textsize(arrow, medium)
+    # Trend arrow to the right of the value, vertically centered on it.
+    _, ah = textsize(arrow, arrow_font)
+    ay = vy + (vh - ah) // 2
+    draw.text((x + pad + vw + 5, ay), arrow, fill=RED, font=arrow_font)
+
+    # Delta change + time of reading on the next line.
+    line_y = vy + vh + 3
     dw, dh = textsize(delta_str, medium)
-    gap = 3
-    total_w = aw + gap + dw
-    start_x = cx - total_w // 2
-    draw.text((start_x, middle_y), arrow, fill=RED, font=medium)
-    draw.text((start_x + aw + gap, middle_y), delta_str, fill=BLACK, font=medium)
+    draw.text((x + pad, line_y), delta_str, fill=BLACK, font=medium)
+    draw.text((x + pad + dw + 10, line_y), time_str, fill=BLACK, font=medium)
 
-    tw, th = textsize(time_str, small)
-    bottom_y = y + h - th - bottom_pad
-    draw.text((cx - tw // 2, bottom_y), time_str, fill=BLACK, font=small)
+    if not pump:
+        return
+
+    # Pump details stacked underneath.
+    py = line_y + dh + 6
+    plh = 16
+
+    iob = pump.get("iob")
+    bolus = pump.get("last_bolus")
+    basal = pump.get("current_basal")
+
+    draw.text(
+        (x + pad, py),
+        f"IOB {iob:.1f}U" if iob is not None else "IOB —",
+        fill=BLACK, font=pump_font,
+    )
+    if bolus is not None:
+        mins = bolus.get("minutes_ago", 0)
+        when = f"{mins}m" if mins < 60 else f"{mins // 60}h"
+        bol_text = f"Bol {bolus['units']:.1f}U {when}"
+    else:
+        bol_text = "Bol —"
+    draw.text((x + pad, py + plh), bol_text, fill=BLACK, font=pump_font)
+    draw.text(
+        (x + pad, py + 2 * plh),
+        f"Bas {basal:.2f}" if basal is not None else "Bas —",
+        fill=BLACK, font=pump_font,
+    )

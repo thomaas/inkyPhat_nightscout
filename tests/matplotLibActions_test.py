@@ -89,22 +89,22 @@ class TestSensorBadge:
     def test_no_badge_when_sensor_above_threshold(self, glucose_payload):
         pump = self._make_pump(remaining_hours=240)  # 10 days
         img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
-        # Without a badge, the corner (top-right of plot area) is plot background only.
-        # Sample a tight rectangle that the badge would occupy.
-        corner = img.crop((100, 0, 130, 14))
+        # Without a badge, the top-right of the graph is plot background only.
+        # Sample the rectangle that the badge would occupy.
+        corner = img.crop((150, 0, 212, 16))
         assert _count_red_pixels(corner) == 0
 
     def test_badge_appears_when_sensor_at_two_days(self, glucose_payload):
         pump = self._make_pump(remaining_hours=48)
         img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
-        corner = img.crop((100, 0, 130, 14))
+        corner = img.crop((150, 0, 212, 16))
         # The badge is a small red rectangle — should produce a substantial red blob
         assert _count_red_pixels(corner) > 30
 
     def test_badge_uses_hours_below_one_day(self, glucose_payload):
         pump = self._make_pump(remaining_hours=18)
         img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
-        corner = img.crop((100, 0, 130, 14))
+        corner = img.crop((150, 0, 212, 16))
         assert _count_red_pixels(corner) > 30
 
     def test_badge_shows_hours_not_floored_days(self, glucose_payload):
@@ -112,7 +112,7 @@ class TestSensorBadge:
         # New logic should print "S 70h" instead.
         pump = self._make_pump(remaining_hours=70)
         img = matplotLibActions.render(glucose_payload, pump, 70, 180, sensor_warning_days=3)
-        corner = img.crop((100, 0, 130, 14))
+        corner = img.crop((150, 0, 212, 16))
         assert _count_red_pixels(corner) > 30
 
 
