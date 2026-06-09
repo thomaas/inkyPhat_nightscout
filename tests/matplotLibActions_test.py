@@ -44,6 +44,20 @@ class TestRender:
         # a substantial number of red-ish pixels.
         assert _count_red_pixels(img) > 50
 
+    def test_unicorn_easter_egg_at_exactly_100(self, glucose_payload):
+        glucose_payload["current_glucose"]["value"] = 100
+        img = matplotLibActions.render(glucose_payload, None, 70, 180)
+        # The unicorn replaces the graph on the right and uses red for its
+        # horn, mane and tail — expect a noticeable red blob in that region.
+        graph_region = img.crop((matplotLibActions.INFO_WIDTH, 0,
+                                 matplotLibActions.WIDTH, matplotLibActions.HEIGHT))
+        assert _count_red_pixels(graph_region) > 50
+
+    def test_no_unicorn_for_other_values(self, glucose_payload):
+        glucose_payload["current_glucose"]["value"] = 101
+        img = matplotLibActions.render(glucose_payload, None, 70, 180)
+        assert img.size == (matplotLibActions.WIDTH, matplotLibActions.HEIGHT)
+
     def test_partial_pump_data_does_not_crash(self, glucose_payload):
         partial = {"iob": None, "last_bolus": None, "current_basal": 0.85}
         img = matplotLibActions.render(glucose_payload, partial, 70, 180)

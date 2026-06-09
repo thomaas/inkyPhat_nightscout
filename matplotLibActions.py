@@ -36,15 +36,20 @@ def render(glucose, pump_data, target_low, target_high, sensor_warning_days=3):
     canvas = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
 
     graph_x = INFO_WIDTH
-    plot_img = _render_plot(
-        glucose["glucose_history"], target_low, target_high, GRAPH_WIDTH, HEIGHT
-    )
-    canvas.paste(plot_img, (graph_x, 0))
 
-    if pump_data:
-        _draw_sensor_badge(
-            canvas, pump_data.get("sensor"), graph_x, GRAPH_WIDTH, sensor_warning_days
+    # Easter egg: a perfect 100 earns a unicorn in place of the graph. 🦄
+    if glucose["current_glucose"]["value"] == 100:
+        _draw_unicorn(canvas, graph_x, 0, GRAPH_WIDTH, HEIGHT)
+    else:
+        plot_img = _render_plot(
+            glucose["glucose_history"], target_low, target_high, GRAPH_WIDTH, HEIGHT
         )
+        canvas.paste(plot_img, (graph_x, 0))
+
+        if pump_data:
+            _draw_sensor_badge(
+                canvas, pump_data.get("sensor"), graph_x, GRAPH_WIDTH, sensor_warning_days
+            )
 
     _draw_info_panel(
         canvas, glucose, pump_data, target_low, target_high,
@@ -77,6 +82,50 @@ def _draw_sensor_badge(canvas, sensor, graph_x, graph_w, threshold_days):
         fill=RED,
     )
     draw.text((box_x + pad_x, box_y + pad_y - 1), text, fill=WHITE, font=font)
+
+
+def _draw_unicorn(canvas, x, y, w, h):
+    """A little cartoon unicorn: black silhouette with a red horn, mane and tail.
+
+    Drawn from relative coordinates so it scales to whatever box it's given.
+    Shown as a treat when glucose lands on a perfect 100.
+    """
+    draw = ImageDraw.Draw(canvas)
+
+    def P(fx, fy):
+        return (x + fx * w, y + fy * h)
+
+    def box(fx0, fy0, fx1, fy1):
+        return [P(fx0, fy0), P(fx1, fy1)]
+
+    # Body and head.
+    draw.ellipse(box(0.30, 0.42, 0.82, 0.74), fill=BLACK)
+    draw.ellipse(box(0.08, 0.30, 0.36, 0.52), fill=BLACK)
+    # Neck joining head to body.
+    draw.polygon([P(0.18, 0.40), P(0.40, 0.38), P(0.56, 0.66), P(0.30, 0.70)], fill=BLACK)
+    # Snout poking forward-left.
+    draw.ellipse(box(0.04, 0.40, 0.18, 0.52), fill=BLACK)
+
+    # Legs.
+    leg_w = 0.055 * w
+    for fx in (0.36, 0.48, 0.62, 0.74):
+        lx = x + fx * w
+        draw.rectangle([lx, y + 0.66 * h, lx + leg_w, y + 0.96 * h], fill=BLACK)
+
+    # Flowing tail, pointed horn and a mane down the neck — all in red.
+    draw.polygon(
+        [P(0.79, 0.44), P(0.93, 0.36), P(0.99, 0.58), P(0.88, 0.82), P(0.80, 0.62)],
+        fill=RED,
+    )
+    draw.polygon([P(0.17, 0.30), P(0.25, 0.30), P(0.12, 0.02)], fill=RED)
+    draw.polygon(
+        [P(0.27, 0.26), P(0.39, 0.32), P(0.50, 0.56), P(0.40, 0.54), P(0.30, 0.40)],
+        fill=RED,
+    )
+
+    # Pointy ear and an eye.
+    draw.polygon([P(0.27, 0.30), P(0.35, 0.30), P(0.31, 0.14)], fill=BLACK)
+    draw.ellipse(box(0.15, 0.37, 0.20, 0.43), fill=WHITE)
 
 
 def _render_plot(history, target_low, target_high, width, height):
@@ -269,9 +318,9 @@ def _draw_info_panel(canvas, glucose, pump, target_low, target_high, x, y, w, h)
         bbox = draw.textbbox((0, 0), text, font=font)
         return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
-    # Big glucose value, top-left.
+    # Big glucose value, top-left — nudged up a touch to give it more room.
     vw, vh = textsize(value_str, big)
-    vy = y + pad
+    vy = y + 1
     draw.text((x + pad, vy), value_str, fill=value_color, font=big)
 
     # Trend arrow to the right of the value, vertically centered on it.
@@ -279,8 +328,8 @@ def _draw_info_panel(canvas, glucose, pump, target_low, target_high, x, y, w, h)
     ay = vy + (vh - ah) // 2
     draw.text((x + pad + vw + 5, ay), arrow, fill=RED, font=arrow_font)
 
-    # Delta change + time of reading on the next line.
-    line_y = vy + vh + 3
+    # Delta change + time of reading on the next line, with a little breathing room.
+    line_y = vy + vh + 8
     dw, dh = textsize(delta_str, medium)
     draw.text((x + pad, line_y), delta_str, fill=BLACK, font=medium)
     draw.text((x + pad + dw + 10, line_y), time_str, fill=BLACK, font=medium)
