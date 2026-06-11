@@ -6,4 +6,5 @@ pydexcom
 tconnectsync>=2.0
 python-dotenv
 setuptools<81
+tzdata  # timezone database for zoneinfo (needed on minimal Linux installs)
 # inky  # only on Raspberry Pi (GPIO/SPI required) — install separately there

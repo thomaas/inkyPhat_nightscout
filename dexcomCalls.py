@@ -1,6 +1,7 @@
 import datetime
 import os
 import pickle
+from zoneinfo import ZoneInfo
 
 from pydexcom import Dexcom, Region
 
@@ -9,10 +10,12 @@ from config import (
     checkFile,
     dexcom_password,
     dexcom_region,
-    dexcom_timezone_offset_hours,
+    dexcom_timezone_name,
     dexcom_username,
     nightscoutDataPoints,
 )
+
+_LOCAL_TZ = ZoneInfo(dexcom_timezone_name)
 
 
 def checkIfNeedsToRun(lastEntry):
@@ -28,7 +31,9 @@ def checkIfNeedsToRun(lastEntry):
 
 
 def _shift(dt):
-    return dt + datetime.timedelta(hours=dexcom_timezone_offset_hours)
+    # pydexcom returns a timezone-aware datetime, so converting to the
+    # configured zone yields the correct local wall-clock time, including DST.
+    return dt.astimezone(_LOCAL_TZ)
 
 
 def getDataFromNightscout():

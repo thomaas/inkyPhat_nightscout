@@ -3,8 +3,10 @@ dexcom_username = "your UserName"
 dexcom_password = "Your Dexcom Password"
 # Server region: "us" (US), "ous" (rest of world), or "jp" (Japan).
 dexcom_region = "ous"
-# Hours to add to Dexcom timestamps for local-time display (CET = 1).
-dexcom_timezone_offset_hours = 1
+# IANA timezone for local-time display. Dexcom timestamps are converted into
+# this zone, so daylight-saving switches are handled automatically.
+# Examples: "Europe/Berlin", "Europe/London", "America/New_York".
+dexcom_timezone_name = "Europe/Berlin"
 
 # --- Glucose target range -------------------------------------------------
 # Values outside this range are rendered in red on the display.
