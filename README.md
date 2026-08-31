@@ -9,7 +9,6 @@ Data sources:
 
 The live display shows the current reading + trend + 3h graph; whenever Tandem Source is reachable, a side panel adds IOB / last bolus / current basal. Outside work hours a suspend screen takes over: full-day graph + Time-in-Range stats, with a small ★ / ★★ / ★★★ trophy when TIR is good.
 
-![InkyPhat generated graph](inkyPhatShown.png)
 ![InkyPhat mounted on a Raspberry Pi](inkyPhatShown2.JPG)
 ![InkyPhat mounted on a Raspberry Pi - Suspend Display with TIR](IMG_5623.jpeg)
 
