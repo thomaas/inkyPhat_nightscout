@@ -23,32 +23,57 @@ The live display shows the current reading + trend + 3h graph; whenever Tandem S
 
 ## Setup on the Raspberry Pi
 
-1. **Install InkyPHAT from Pimoroni:**
+The order below matters: the project venv is created *before* the Pimoroni installer runs, so the `inky` driver is installed straight into that venv, and the single reboot comes last, after everything that touches `/boot/firmware/config.txt`.
+
+1. **Install the system packages:**
 
    ```bash
-   git clone https://github.com/pimoroni/inky
-   cd inky
-   ./install.sh
+   sudo apt update
    sudo apt install -y git python3-venv python3-dev libopenjp2-7 libopenblas0
-   sudo reboot
    ```
-   
-   libopenblas0 is required by the numpy wheel — without it you'll see ImportError: libopenblas.so.0: cannot open shared object file when running the script.
 
-2. **Clone the repo and create a virtualenv:**
+   `libopenblas0` is required by the numpy wheel — without it you'll see `ImportError: libopenblas.so.0: cannot open shared object file` when running the script. `libopenjp2-7` is needed by Pillow, `python3-dev` for building wheels.
+
+2. **Clone this repo and create the virtualenv:**
 
    ```bash
    git clone https://github.com/thomaas/inkyPhat_nightscout.git
    cd inkyPhat_nightscout
    python3 -m venv .venv
    source .venv/bin/activate
-   pip install -r requirements.txt
+   ```
+
+   Keep this venv activated for the next two steps.
+
+3. **Install the Pimoroni Inky driver into the activated venv:**
+
+   ```bash
+   git clone https://github.com/pimoroni/inky ~/inky
+   cd ~/inky
+   ./install.sh
+   ```
+
+   The `cd` is required — `install.sh` reads `pyproject.toml` and `requirements.txt` from the current directory, so it has to be started from inside the `inky` clone (never from this project's folder, which has its own `pyproject.toml`).
+
+   `install.sh` detects the activated `VIRTUAL_ENV` and installs `inky` there instead of creating its own `~/.virtualenvs/pimoroni`. It also installs the apt packages it needs and enables SPI / adds `dtoverlay=spi0-0cs` in `/boot/firmware/config.txt`. Answer its prompts, but **don't reboot yet** — that happens in step 6. Run it as your normal user, not with `sudo`.
+
+   `inky` is deliberately not in `requirements.txt` (it needs GPIO/SPI), so the project can also be developed on a Mac. If you'd rather skip `install.sh`, the manual equivalent is:
+
+   ```bash
+   sudo raspi-config nonint do_spi 0
+   sudo raspi-config nonint do_i2c 0
+   echo "dtoverlay=spi0-0cs" | sudo tee -a /boot/firmware/config.txt
    pip install inky
    ```
 
-   `inky` is the Pimoroni driver for the e-paper display. It's intentionally not in `requirements.txt` so the project can also be developed on a Mac.
+4. **Install the project dependencies:**
 
-3. **Create your config:**
+   ```bash
+   cd ~/inkyPhat_nightscout
+   pip install -r requirements.txt
+   ```
+
+5. **Create your config:**
 
    ```bash
    cp config.py_example config.py
@@ -57,15 +82,25 @@ The live display shows the current reading + trend + 3h graph; whenever Tandem S
    Edit `config.py` and fill in:
    - `dexcom_username` / `dexcom_password` — your Dexcom Share login
    - `dexcom_region` — `"us"` for the US, `"ous"` for the rest of the world, `"jp"` for Japan
+   - `dexcom_timezone_name` — IANA timezone for local-time display, e.g. `"Europe/Berlin"`
    - `inkyPhatColour` — `"red"`, `"yellow"`, or `"black"`, matching your InkyPHAT model
+   - Optional, for pump data: `show_pump_data = True` plus `tconnect_email` / `tconnect_password` / `tconnect_region` (`"US"` or `"EU"`)
 
-4. **Run it:**
+6. **Reboot so the SPI changes take effect:**
 
    ```bash
+   sudo reboot
+   ```
+
+7. **Run it:**
+
+   ```bash
+   cd ~/inkyPhat_nightscout
+   source .venv/bin/activate
    python main.py
    ```
 
-   The InkyPHAT will refresh and show your latest reading.
+   The InkyPHAT will refresh and show your latest reading. (The reboot dropped the venv activation, hence the `source` again — cron uses the venv's Python directly, see below.)
 
 ## Refreshing automatically
 
