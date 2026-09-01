@@ -156,12 +156,12 @@ If it still fails afterwards, reinstall Pillow from PyPI so you get a wheel with
 
 The same pattern applies to `libopenblas.so.0` (numpy) — see step 1 for the full package list.
 
-**`Tandem API not available: 'TandemSourceApi' object has no attribute 'pump_event_metadata'`**
+**`Tandem API not available: …`** (e.g. `'TandemSourceApi' object has no attribute 'get_pumper'`)
 
-Your `tconnectsync` is too old. The pump panel is skipped and the rest of the display still renders, but to get pump data back:
+Your `tconnectsync` predates 3.0. Tandem replaced the binary event stream with pre-decoded JSON endpoints, and `tandemCalls.py` targets that new API (`get_pumper()` / `get_pump_logs()`, camelCase event fields). The pump panel is skipped and the rest of the display still renders; to get pump data back:
 
 ```bash
-.venv/bin/pip install -U "tconnectsync>=2.3.4"
+.venv/bin/pip install -U "tconnectsync>=3.0,<4"
 ```
 
 ## Tests

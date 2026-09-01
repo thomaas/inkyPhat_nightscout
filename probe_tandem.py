@@ -7,7 +7,7 @@ One-shot debugging tool to capture real responses for tandemCalls.py parser dev.
 
 Usage on the Pi (assumes the project's .venv is active):
 
-    pip install tconnectsync python-dotenv 'setuptools<81'
+    pip install 'tconnectsync>=3.0,<4' python-dotenv 'setuptools<81'
 
     # Option A — env vars:
     export TCONNECT_EMAIL=you@example.com
@@ -106,20 +106,22 @@ def _probe(label, func):
         return None
 
 
-def _extract_device_id(pump_event_metadata):
-    """pump_event_metadata is a list of {tconnectDeviceId, serialNumber, ...}."""
-    if isinstance(pump_event_metadata, list) and pump_event_metadata:
-        first = pump_event_metadata[0]
-        if isinstance(first, dict) and first.get("tconnectDeviceId"):
-            return first["tconnectDeviceId"]
+def _extract_device_id(pumper):
+    """get_pumper() returns {..., "pumps": [{assignmentId, serialNumber, ...}]}.
+
+    assignmentId (a UUID) replaced the numeric tconnectDeviceId in
+    tconnectsync 3.0. Pick the pump that uploaded most recently.
+    """
+    if isinstance(pumper, dict) and pumper.get("pumps"):
+        pump = max(pumper["pumps"], key=lambda p: p.get("lastUploadDate") or "")
+        return pump.get("assignmentId")
     return None
 
 
 def _probe_session_events(ts, device_id, start_iso, end_iso, event_ids):
-    from tconnectsync.eventparser.generic import Events, decode_raw_events
-    raw = ts.pump_events_raw(device_id, start_iso, end_iso, event_ids_filter=event_ids)
-    decoded = decode_raw_events(raw)
-    return _serialize_events(list(Events(decoded)))
+    from tconnectsync.eventparser.generic import Events
+    logs = ts.get_pump_logs(device_id, start_iso, end_iso, event_ids_filter=event_ids)
+    return _serialize_events(list(Events(logs.get("events") or [])))
 
 
 def _serialize_events(events):
@@ -176,13 +178,11 @@ def main():
     print(f"Date range: {start} → {end}")
 
     _probe("tandemsource_pumper_info", lambda: ts.pumper_info())
-    metadata = _probe(
-        "tandemsource_pump_event_metadata", lambda: ts.pump_event_metadata()
-    )
+    pumper = _probe("tandemsource_pumper", lambda: ts.get_pumper())
 
-    device_id = _extract_device_id(metadata)
+    device_id = _extract_device_id(pumper)
     if device_id:
-        print(f"\nExtracted tconnectDeviceId from metadata: {device_id}")
+        print(f"\nExtracted assignmentId from pumper: {device_id}")
         _probe(
             "tandemsource_pump_events",
             lambda: _serialize_events(ts.pump_events(device_id, start, end)),
@@ -191,14 +191,14 @@ def main():
         # to diagnose sensor-remaining-time computation when the current sensor
         # was started before yesterday.
         session_start = (today - datetime.timedelta(days=14)).isoformat()
-        SESSION_EVENT_IDS = [212, 213, 214, 394, 404, 405, 406, 447]
+        SESSION_EVENT_IDS = [212, 213, 214, 394, 404, 405, 406, 447, 477, 486]
         _probe(
             "tandemsource_sensor_session_events_14d",
             lambda: _probe_session_events(ts, device_id, session_start, end, SESSION_EVENT_IDS),
         )
     else:
-        print("\nCould not extract tconnectDeviceId from pump_event_metadata.")
-        print("Inspect tandem_probe_output/tandemsource_pump_event_metadata.json")
+        print("\nCould not extract assignmentId from get_pumper().")
+        print("Inspect tandem_probe_output/tandemsource_pumper.json")
         print("and share it back.")
 
     print(f"\nDone. Files in: {OUTPUT_DIR}")
