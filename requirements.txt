@@ -3,7 +3,7 @@ font-intuitive
 matplotlib
 numpy
 pydexcom
-tconnectsync>=2.0
+tconnectsync>=2.3.4  # older releases lack TandemSourceApi.pump_event_metadata()
 python-dotenv
 setuptools<81
 tzdata  # timezone database for zoneinfo (needed on minimal Linux installs)

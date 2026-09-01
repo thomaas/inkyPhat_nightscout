@@ -28,10 +28,13 @@ The order below matters: the project venv is created *before* the Pimoroni insta
 
    ```bash
    sudo apt update
-   sudo apt install -y git python3-venv python3-dev libopenjp2-7 libopenblas0
+   sudo apt install -y git python3-venv python3-dev \
+       libopenjp2-7 libopenblas0 libfreetype6 libjpeg62-turbo
    ```
 
-   `libopenblas0` is required by the numpy wheel — without it you'll see `ImportError: libopenblas.so.0: cannot open shared object file` when running the script. `libopenjp2-7` is needed by Pillow, `python3-dev` for building wheels.
+   `libopenblas0` is required by the numpy wheel — without it you'll see `ImportError: libopenblas.so.0: cannot open shared object file` when running the script. `libfreetype6` is what Pillow needs for text rendering: on Raspberry Pi OS, `pip` pulls Pillow from piwheels, and those wheels link against the *system* freetype instead of bundling their own — without it every `ImageFont.truetype()` call fails with `ImportError: libfreetype.so.6: cannot open shared object file`. `libopenjp2-7` and `libjpeg62-turbo` cover Pillow's other image codecs, `python3-dev` is for building wheels.
+
+   No font files need to be installed: the display uses `DejaVuSans-Bold.ttf`, which ships inside the matplotlib package (`mpl-data/fonts/ttf/`). Only the freetype *runtime* above is required to rasterise it.
 
 2. **Clone this repo and create the virtualenv:**
 
@@ -131,6 +134,34 @@ In `config.py`, set `saveLastImageShown = True` so the preview PNG (`inkyPhatLas
 
 ```bash
 python main.py
+```
+
+## Troubleshooting
+
+**`ImportError: libfreetype.so.6: cannot open shared object file`** (raised from `PIL/ImageFont.py`)
+
+The system freetype library is missing, so Pillow can't rasterise any text:
+
+```bash
+sudo apt install -y libfreetype6
+.venv/bin/python -c "from PIL import ImageFont; print(ImageFont.core)"
+```
+
+If it still fails afterwards, reinstall Pillow from PyPI so you get a wheel with freetype bundled instead of the piwheels build:
+
+```bash
+.venv/bin/pip install --force-reinstall --no-cache-dir \
+    --index-url https://pypi.org/simple Pillow
+```
+
+The same pattern applies to `libopenblas.so.0` (numpy) — see step 1 for the full package list.
+
+**`Tandem API not available: 'TandemSourceApi' object has no attribute 'pump_event_metadata'`**
+
+Your `tconnectsync` is too old. The pump panel is skipped and the rest of the display still renders, but to get pump data back:
+
+```bash
+.venv/bin/pip install -U "tconnectsync>=2.3.4"
 ```
 
 ## Tests
