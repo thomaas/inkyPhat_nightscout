@@ -140,3 +140,4 @@ lastRun
 *.db-shm
 reports/
 tandem_probe_output/
+collector.log

@@ -126,9 +126,11 @@ The display shows the present; `collector.py` and `report.py` build the past. Ne
 Add both to `crontab -e`:
 
 ```cron
-0 */3 * * * /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/collector.py
-0 7   * * 1 /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/report.py
+0 */3 * * * /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/collector.py >> /home/pi/inkyPhat_nightscout/collector.log 2>&1
+0 7   * * 1 /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/report.py >> /home/pi/inkyPhat_nightscout/collector.log 2>&1
 ```
+
+Keep the redirect. Without it cron discards the output, and a collector that has been failing every night since the last Dexcom password change looks exactly like one that is working. `tail -20 collector.log` is the fastest health check there is.
 
 The collector runs around the clock on purpose. The display cron above only covers weekday office hours, and the fasting nights it never sees are exactly the hours a basal analysis rests on. Every run re-fetches a full 24-hour window and ignores what it already has, so eight overlapping runs a day mean the Pi can be off for most of a day without losing anything.
 
@@ -147,7 +149,12 @@ Useful flags:
 .venv/bin/python report.py --window 7     # a report now, without waiting for Monday
 ```
 
-**What to expect.** An hour is only judged when it has at least 7 clean days behind it — clean meaning near-complete pump data and no bolus in the hour or the insulin duration before it. With three meals a day, that leaves the nights and a few gaps; daytime hours will mostly show as "no evaluable days", which is correct rather than broken. A genuinely informative report takes **two to three weeks** of collecting.
+**What to expect.** An hour is only judged when it has at least 7 clean days behind it — clean meaning near-complete pump data and no bolus in the hour or the insulin duration before it. With three meals a day, that leaves the nights and a few gaps; daytime hours will mostly show as "no evaluable days", which is correct rather than broken.
+
+The two halves of the report mature at different speeds, because they draw on different sources:
+
+- **The basal comparison is usable immediately** after a successful `--backfill 28`. It needs only pump events, and those come back four weeks deep in one go. Glucose is context in that table, not an input.
+- **AGP, time in range and the hypo distribution grow forward from installation**, because Dexcom Share cannot be backfilled at all. The AGP chart needs about two weeks before its percentile bands mean anything.
 
 Every report carries a *Datenqualität* section giving the number of days behind each hour. Read it first: "+34 %" resting on twelve nights means something quite different from the same number resting on one. And none of it is a dosing recommendation — take findings to your diabetes team.
 
