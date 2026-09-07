@@ -36,12 +36,30 @@ def _shift(dt):
     return dt.astimezone(_LOCAL_TZ)
 
 
-def getDataFromNightscout():
-    dexcom = Dexcom(
+def _client():
+    return Dexcom(
         username=dexcom_username,
         password=dexcom_password,
         region=Region(dexcom_region),
     )
+
+
+def getRecentReadings(minutes=1440, max_count=288):
+    """Readings from the last `minutes`, chronological, as dicts.
+
+    1440 minutes / 288 readings is everything Dexcom Share holds — it serves a
+    rolling 24-hour window and nothing older, which is why the collector stores
+    a copy and why a missed day can never be recovered.
+    """
+    entries = _client().get_glucose_readings(minutes=minutes, max_count=max_count)
+    return [
+        {"value": e.value, "timestamp": _shift(e.datetime)}
+        for e in sorted(entries, key=lambda e: e.datetime)
+    ]
+
+
+def getDataFromNightscout():
+    dexcom = _client()
 
     if checkDataBeforeRefresh:
         checkIfNeedsToRun(dexcom.get_glucose_readings(max_count=1)[0].datetime)
@@ -74,18 +92,10 @@ def getDataFromNightscout():
 
 def getTodayData(max_count=288):
     """Fetch today's readings (chronological). Used by the suspend-screen flow."""
-    dexcom = Dexcom(
-        username=dexcom_username,
-        password=dexcom_password,
-        region=Region(dexcom_region),
-    )
-    entries = dexcom.get_glucose_readings(max_count=max_count)
-    today = datetime.datetime.now().date()
-    today_entries = [e for e in entries if _shift(e.datetime).date() == today]
-    today_entries.sort(key=lambda e: e.datetime)
+    today = datetime.datetime.now(tz=_LOCAL_TZ).date()
     return [
-        {"value": e.value, "timestamp": _shift(e.datetime)}
-        for e in today_entries
+        entry for entry in getRecentReadings(max_count=max_count)
+        if entry["timestamp"].date() == today
     ]
 
 

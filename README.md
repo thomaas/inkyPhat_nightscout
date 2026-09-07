@@ -117,6 +117,42 @@ To run live every 5 minutes during weekday work hours and switch to the suspend 
 
 Set `checkDataBeforeRefresh = True` in `config.py` to skip the (relatively slow) e-paper refresh when there's no new reading from Dexcom.
 
+## History and weekly report
+
+The display shows the present; `collector.py` and `report.py` build the past. Neither data source can be recovered after the fact — Dexcom Share serves a rolling 24 hours, the Tandem pump log about four weeks — so anything not stored is gone.
+
+`collector.py` appends glucose readings and pump events to a SQLite file. `report.py` turns that history into `reports/report-YYYY-MM-DD.md` plus three charts, and answers one question in particular: **where does Control-IQ systematically deviate from your programmed profile basal rate?** Every `LidBasalRateChange` event carries the commanded rate and the profile's base rate side by side, so the comparison is an integral over two step functions — no model and no guessing.
+
+Add both to `crontab -e`:
+
+```cron
+0 */3 * * * /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/collector.py
+0 7   * * 1 /home/pi/inkyPhat_nightscout/.venv/bin/python /home/pi/inkyPhat_nightscout/report.py
+```
+
+The collector runs around the clock on purpose. The display cron above only covers weekday office hours, and the fasting nights it never sees are exactly the hours a basal analysis rests on. Every run re-fetches a full 24-hour window and ignores what it already has, so eight overlapping runs a day mean the Pi can be off for most of a day without losing anything.
+
+Once, right after setup, pull whatever pump history the API still holds:
+
+```bash
+.venv/bin/python collector.py --backfill 28
+```
+
+Glucose cannot be backfilled, so that side starts from zero and grows forward.
+
+Useful flags:
+
+```bash
+.venv/bin/python collector.py --dry-run   # fetch and report, write nothing
+.venv/bin/python report.py --window 7     # a report now, without waiting for Monday
+```
+
+**What to expect.** An hour is only judged when it has at least 7 clean days behind it — clean meaning near-complete pump data and no bolus in the hour or the insulin duration before it. With three meals a day, that leaves the nights and a few gaps; daytime hours will mostly show as "no evaluable days", which is correct rather than broken. A genuinely informative report takes **two to three weeks** of collecting.
+
+Every report carries a *Datenqualität* section giving the number of days behind each hour. Read it first: "+34 %" resting on twelve nights means something quite different from the same number resting on one. And none of it is a dosing recommendation — take findings to your diabetes team.
+
+Storage stays small: roughly 16 KB per day of raw data, pruned after `db_raw_retention_days` (default 120, so about 2 MB), plus an hourly aggregate that is kept forever at around 1 MB per year. The database and the reports are in `.gitignore` — they hold health data and must not be committed.
+
 ## Development on a Mac (or any non-Pi machine)
 
 The script also runs without an InkyPHAT — the Inky import is detected as missing and the rendered image is saved as a PNG instead, which is useful for tweaking the layout.

@@ -132,3 +132,11 @@ dmypy.json
 .pyre/
 config.py
 lastRun
+
+# Health data — never commit. The SQLite history holds glucose and pump
+# records, the reports hold the same data in aggregated form.
+*.db
+*.db-wal
+*.db-shm
+reports/
+tandem_probe_output/

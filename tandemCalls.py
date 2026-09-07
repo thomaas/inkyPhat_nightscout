@@ -82,16 +82,31 @@ def _find_device_id(pump):
     return None
 
 
-def _find_insulin_duration_minutes(pump):
-    """Read insulinDuration from the active profile in settings.details."""
+def _find_active_profile(pump):
+    """The active insulin delivery profile (IDP) from settings.details.
+
+    Carries timeDependentSegments with startTime (minutes from midnight),
+    basalRate and carbRatio (both milliunits), isf and targetBg. Only
+    insulinDuration is needed for the display; the collector stores the whole
+    profile so a later change to the basal schedule stays traceable.
+    """
     try:
         profiles = pump["settings"]["details"]["profiles"]
         active_idp = profiles.get("activeIdp")
         for profile in profiles["profile"]:
             if profile.get("idp") == active_idp:
-                return int(profile["insulinDuration"])
-        return int(profiles["profile"][0]["insulinDuration"])
+                return profile
+        return profiles["profile"][0]
     except (KeyError, IndexError, TypeError):
+        return None
+
+
+def _find_insulin_duration_minutes(pump):
+    """Read insulinDuration from the active profile in settings.details."""
+    profile = _find_active_profile(pump)
+    try:
+        return int(profile["insulinDuration"])
+    except (KeyError, TypeError):
         return _INSULIN_DURATION_DEFAULT_MINUTES
 
 
@@ -164,15 +179,40 @@ def _fetch_sensor_session(ts, device_id, lookback_days=14):
     }
 
 
-def get_pump_data():
+def connect():
+    """Log in and resolve the active pump.
+
+    Returns (ts, pump, device_id, insulin_duration); device_id is None when the
+    account has no usable pump. Shared by the display path and the collector so
+    the login and pump-selection logic exists once.
+    """
     api = TConnectApi(tconnect_email, tconnect_password, tconnect_region)
     ts = api.tandemsource
-
     pump = _select_pump(ts.get_pumper())
-    device_id = _find_device_id(pump)
+    return ts, pump, _find_device_id(pump), _find_insulin_duration_minutes(pump)
+
+
+def get_events_between(start_date, end_date, ts=None, device_id=None):
+    """Parsed pump events for a date range, oldest first.
+
+    Used by the collector. The pump-logs endpoint caps a request at roughly
+    four weeks, so a longer backfill has to be split into chunks by the caller.
+    """
+    if ts is None or device_id is None:
+        ts, _pump, device_id, _duration = connect()
+    if device_id is None:
+        return []
+    events = _parsed_events(
+        ts.pump_events(device_id, start_date.isoformat(), end_date.isoformat())
+    )
+    events.sort(key=lambda e: e.raw.timestampRaw)
+    return events
+
+
+def get_pump_data():
+    ts, _pump, device_id, insulin_duration = connect()
     if device_id is None:
         return None
-    insulin_duration = _find_insulin_duration_minutes(pump)
 
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)

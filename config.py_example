@@ -35,6 +35,34 @@ tconnect_password = ""
 tconnect_region = "EU"            # "US" or "EU"
 tconnect_timezone_name = "Europe/Berlin"
 
+# --- History and weekly report --------------------------------------------
+# collector.py appends glucose and pump data to a SQLite file; report.py turns
+# it into a Markdown report. Neither source can be recovered after the fact —
+# Dexcom Share only serves the last 24 hours — so the collector should run
+# around the clock, independently of the display cron.
+#
+# All of these have working defaults; you only need to set what you want to
+# change. Sizes measured on real data: roughly 16 KB per day, so the default
+# 120-day retention settles at about 2 MB plus the hourly aggregate, which is
+# kept forever at around 1 MB per year.
+db_path = "/home/pi/inkyPhat_nightscout/nightscout.db"
+report_dir = "/home/pi/inkyPhat_nightscout/reports"
+
+# How long raw 5-minute rows are kept. The hourly aggregate is never purged,
+# so long-term trends survive regardless of this setting.
+db_raw_retention_days = 120
+
+# Window the basal comparison and the AGP chart are computed over.
+analysis_window_days = 28
+agp_window_days = 14
+
+# How long the last known basal rate may be carried forward past its event
+# before an hour counts as missing data rather than as an hour of no insulin.
+# Only a backstop: the primary guard is which windows were actually fetched.
+# Raise it if the data-quality table shows many hours dropped as "Lücke"
+# despite the Pi having been online.
+max_carry_minutes = 360
+
 # --- File paths -----------------------------------------------------------
 # Only used when checkDataBeforeRefresh is True.
 checkFile = "path and filename"
